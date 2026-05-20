@@ -4,6 +4,9 @@
       "title": "Section",
       "id": "section",
       "plugins": {
+        "da": {
+          "unsafeHTML": "<div></div>"
+        },
         "xwalk": {
           "page": {
             "resourceType": "core/franklin/components/section/v1/section",
@@ -55,6 +58,10 @@
               "value": "article"
             },
             {
+              "name": "Blog",
+              "value": "blog"
+            },
+            {
               "name": "Columns",
               "value": "columns"
             }
@@ -80,15 +87,22 @@
         "fragment",
         "offer",
         "storelocator",
+        "blog-list",
         "product-recommendations",
         "product-teaser",
         "product-list-page",
         "product-list-page-custom",
         "product-details",
         "video",
+        "dm-video",
+        "dm-scene7-template",
         "form",
+        "embed-adaptive-form",
         "reward",
-        "reward-sticky"
+        "reward-sticky",
+        "sticky-cta",
+        "quiz",
+        "insights"
       ]
     }
   ]

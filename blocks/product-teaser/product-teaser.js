@@ -1,5 +1,7 @@
 import { readBlockConfig } from '../../scripts/aem.js';
-import { performCatalogServiceQuery, renderPrice, mapProductAcdl } from '../../scripts/commerce.js';
+import {
+  performCatalogServiceQuery, renderPrice, mapProductAcdl, getProductLink,
+} from '../../scripts/commerce.js';
 
 const productTeaserQuery = `query productTeaser($sku: String!) {
   products(skus: [$sku]) {
@@ -111,7 +113,7 @@ function renderProduct(product, config, block) {
       <h1>${name}</h1>
       <div class="price">${renderPrice(product, priceFormatter.format)}</div>
       <div class="actions">
-        ${config['details-button'] ? `<a href="/products/${urlKey}/${sku}" class="button primary">Details</a>` : ''}
+        ${config['details-button'] ? `<a href="${getProductLink(urlKey, sku)}" class="button primary">Details</a>` : ''}
         ${config['cart-button'] && addToCartAllowed && __typename === 'SimpleProductView' ? '<button class="add-to-cart secondary">Add to Cart</button>' : ''}
       </div>
     </div>
@@ -139,8 +141,8 @@ function renderProduct(product, config, block) {
 
 export default async function decorate(block) {
   const config = readBlockConfig(block);
-  config['details-button'] = !!(config['details-button'] || config['details-button'] === 'true');
-  config['cart-button'] = !!(config['cart-button'] || config['cart-button'] === 'true');
+  config['details-button'] = !!(config['details-button'] === true || config['details-button'] === 'true');
+  config['cart-button'] = !!(config['cart-button'] === true || config['cart-button'] === 'true');
 
   renderPlaceholder(config, block);
 

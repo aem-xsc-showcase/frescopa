@@ -12,7 +12,7 @@ import componentDecorator from './mappings.js';
 import DocBasedFormToAF from './transform.js';
 import transferRepeatableDOM, { insertAddButton, insertRemoveButton } from './components/repeat/repeat.js';
 import { handleSubmit } from './submit.js';
-import { getSubmitBaseUrl, emailPattern } from './constant.js';
+import { getSubmitBaseUrl, emailPattern, SUBMISSION_SERVICE } from './constant.js';
 import { createOptimizedPicture } from '../../scripts/aem.js';
 
 export const DELAY_MS = 0;
@@ -325,9 +325,6 @@ function inputDecorator(field, element) {
     if (field.required) {
       input.setAttribute('required', 'required');
     }
-    if (field.description) {
-      input.setAttribute('aria-describedby', `${field.id}-description`);
-    }
     if (field.minItems) {
       input.dataset.minItems = field.minItems;
     }
@@ -556,7 +553,18 @@ export default async function decorate(block) {
   let rules = true;
   let form;
   if (formDef) {
-    formDef.action = getSubmitBaseUrl() + (formDef.action || '');
+    const submitProps = formDef?.properties?.['fd:submit'];
+    const actionType = submitProps?.actionName || formDef?.properties?.actionType;
+    const spreadsheetUrl = submitProps?.spreadsheet?.spreadsheetUrl
+      || formDef?.properties?.spreadsheetUrl;
+
+    if (actionType === 'spreadsheet' && spreadsheetUrl) {
+      const iframePath = window.frameElement ? window.parent.location.pathname
+        : window.location.pathname;
+      formDef.action = SUBMISSION_SERVICE + (formDef.id || btoa(pathname || iframePath));
+    } else {
+      formDef.action = getSubmitBaseUrl() + (formDef.action || '');
+    }
     if (isDocumentBasedForm(formDef)) {
       const transform = new DocBasedFormToAF();
       formDef = transform.transform(formDef);

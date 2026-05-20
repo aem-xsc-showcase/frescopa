@@ -14,12 +14,20 @@ import {
 
 // Initialize
 import '../../scripts/initializers/account.js';
+import { rootLink } from '../../scripts/scripts.js';
+import { getProductLink } from '../../scripts/commerce.js';
 
 export default async function decorate(block) {
+  // Xwalk: if in AEM author and not authenticated show placeholder instead
+  if (window.xwalk?.isAuthorEnv && !checkIsAuthenticated()) {
+    block.classList.add('placeholder');
+    return;
+  }
+
   const { 'minified-view': minifiedViewConfig = 'false' } = readBlockConfig(block);
 
   if (!checkIsAuthenticated()) {
-    window.location.href = CUSTOMER_LOGIN_PATH;
+    window.location.href = rootLink(CUSTOMER_LOGIN_PATH);
   } else {
     await accountRenderer.render(OrdersList, {
       minifiedView: minifiedViewConfig === 'true',
@@ -29,10 +37,10 @@ export default async function decorate(block) {
         }
         return '';
       },
-      routeOrdersList: () => CUSTOMER_ORDERS_PATH,
-      routeOrderDetails: (orderNumber) => `${CUSTOMER_ORDER_DETAILS_PATH}?orderRef=${orderNumber}`,
-      routeReturnDetails: ({ orderNumber, returnNumber }) => `${CUSTOMER_RETURN_DETAILS_PATH}?orderRef=${orderNumber}&returnRef=${returnNumber}`,
-      routeOrderProduct: (productData) => (productData?.product ? `/products/${productData.product.urlKey}/${productData.product.sku}` : '#'),
+      routeOrdersList: () => rootLink(CUSTOMER_ORDERS_PATH),
+      routeOrderDetails: (orderNumber) => rootLink(`${CUSTOMER_ORDER_DETAILS_PATH}?orderRef=${orderNumber}`),
+      routeReturnDetails: ({ orderNumber, returnNumber }) => rootLink(`${CUSTOMER_RETURN_DETAILS_PATH}?orderRef=${orderNumber}&returnRef=${returnNumber}`),
+      routeOrderProduct: (productData) => (productData?.product ? getProductLink(productData.product.urlKey, productData.product.sku) : rootLink('#')),
     })(block);
   }
 }

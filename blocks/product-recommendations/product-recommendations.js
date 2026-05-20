@@ -2,7 +2,7 @@
 import { addProductsToCart } from '@dropins/storefront-cart/api.js';
 import { Button, provider as UI } from '@dropins/tools/components.js';
 import { readBlockConfig } from '../../scripts/aem.js';
-import { performCatalogServiceQuery } from '../../scripts/commerce.js';
+import { performCatalogServiceQuery, getProductLink } from '../../scripts/commerce.js';
 import { getConfigValue } from '../../scripts/configs.js';
 
 // initialize dropins
@@ -93,13 +93,13 @@ function renderItem(unitId, product) {
       }
     } else {
       // Navigate to page for non-simple products
-      window.location.href = `/products/${product.urlKey}/${product.sku}`;
+      window.location.href = getProductLink(product.urlKey, product.sku);
     }
   };
 
   const ctaText = product.__typename === 'SimpleProductView' ? 'Add to Cart' : 'Select Options';
   const item = document.createRange().createContextualFragment(`<div class="product-grid-item">
-    <a href="/products/${product.urlKey}/${product.sku}">
+    <a href="${getProductLink(product.urlKey, product.sku)}">
       <picture>
         <source type="image/webp" srcset="${image}?width=300&format=webply&optimize=medium" />
         <img loading="lazy" alt="Image of ${product.name}" width="300" height="375" src="${image}?width=300&format=jpg&optimize=medium" />
@@ -164,7 +164,7 @@ const mapProduct = (product, index) => ({
   categories: [],
   weight: 0,
   image: product.images.length > 0 ? product.images[0].url : undefined,
-  url: new URL(`/products/${product.urlKey}/${product.sku}`, window.location.origin).toString(),
+  url: new URL(getProductLink(product.urlKey, product.sku), window.location.origin).toString(),
   queryType: 'primary',
 });
 
@@ -196,7 +196,7 @@ async function loadRecommendation(block, context, visibility, filters) {
     return;
   }
 
-  const storeViewCode = await getConfigValue('commerce.headers.cs.Magento-Store-View-Code');
+  const storeViewCode = getConfigValue('headers.cs.Magento-Store-View-Code');
 
   if (unitsPromise) {
     return;

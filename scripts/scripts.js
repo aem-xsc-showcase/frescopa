@@ -2,32 +2,36 @@
 /* eslint-disable import/no-cycle */
 import { events } from '@dropins/tools/event-bus.js';
 import {
-  buildBlock,
   decorateBlocks,
+  loadHeader,
+  loadFooter,
   decorateButtons,
   decorateIcons,
   decorateSections,
   decorateTemplateAndTheme,
-  loadFooter,
-  loadHeader,
-  getMetadata,
-  loadScript,
-  toCamelCase,
   toClassName,
   readBlockConfig,
   waitForFirstImage,
   loadSection,
   loadSections,
   loadCSS,
-  sampleRUM,
 } from './aem.js';
 import { trackHistory } from './commerce.js';
 import initializeDropins from './initializers/index.js';
+import { initializeConfig, getRootPath, getListOfRootPaths } from './configs.js';
 
-const AUDIENCES = {
-  mobile: () => window.innerWidth < 600,
-  desktop: () => window.innerWidth >= 600,
-  // define your custom audiences here as needed
+import {
+  runExperimentation,
+  showExperimentationRail,
+} from './experiment-loader.js';
+
+const experimentationConfig = {
+  prodHost: 'frescopa.coffee', // TODO: change domains for different showcases.
+  audiences: {
+    mobile: () => window.innerWidth < 600,
+    desktop: () => window.innerWidth >= 600,
+    // define your custom audiences here as needed
+  },
 };
 
 /**
@@ -47,31 +51,15 @@ export function getAllMetadata(scope) {
 }
 
 // Define an execution context
-const pluginContext = {
-  getAllMetadata,
-  getMetadata,
-  loadCSS,
-  loadScript,
-  sampleRUM,
-  toCamelCase,
-  toClassName,
-};
-
-/**
- * Builds hero block and prepends to main in a new section.
- * @param {Element} main The container element
- */
-/* eslint-disable no-unused-vars */
-function buildHeroBlock(main) {
-  const h1 = main.querySelector('h1');
-  const picture = main.querySelector('picture');
-  // eslint-disable-next-line no-bitwise
-  if (h1 && picture && (h1.compareDocumentPosition(picture) & Node.DOCUMENT_POSITION_PRECEDING)) {
-    const section = document.createElement('div');
-    section.append(buildBlock('hero', { elems: [picture, h1] }));
-    main.prepend(section);
-  }
-}
+// const pluginContext = {
+//   getAllMetadata,
+//   getMetadata,
+//   loadCSS,
+//   loadScript,
+//   sampleRUM,
+//   toCamelCase,
+//   toClassName,
+// };
 
 /**
  * Moves all the attributes from a given element to another given element.
@@ -150,6 +138,7 @@ function buildAutoBlocks(_main) {
  * @param {Element} main The container element
  */
 function buildTemplateColumns(doc) {
+  document.body.classList.add('columns');
   const columns = doc.querySelectorAll('main > div.section[data-column-width]');
 
   columns.forEach((column) => {
@@ -172,6 +161,29 @@ async function applyTemplates(doc) {
   if (doc.body.classList.contains('columns')) {
     buildTemplateColumns(doc);
   }
+
+  const templates = ['dashboard'];
+  const activeTemplate = templates.find((t) => doc.body.classList.contains(t));
+  if (activeTemplate) {
+    await loadCSS(`${window.hlx.codeBasePath}/templates/${activeTemplate}/${activeTemplate}.css`);
+    const mod = await import(`${window.hlx.codeBasePath}/templates/${activeTemplate}/${activeTemplate}.js`).catch(() => null);
+    if (mod?.default) await mod.default(doc);
+  }
+}
+
+/**
+ * Notifies dropins about the current loading state.
+ * @param {string} state The loading state to notify
+ */
+function notifyUI(event) {
+  // skip if the event was already sent
+  if (events.lastPayload(`aem/${event}`) === event) return;
+  // notify dropins about the current loading state
+  const handleEmit = () => events.emit(`aem/${event}`);
+  // listen for prerender event
+  document.addEventListener('prerenderingchange', handleEmit, { once: true });
+  // emit the event immediately
+  handleEmit();
 }
 
 /**
@@ -180,12 +192,46 @@ async function applyTemplates(doc) {
  */
 // eslint-disable-next-line import/prefer-default-export
 export function decorateMain(main) {
-  // hopefully forward compatible button decoration
+  decorateLinks(main);
   decorateButtons(main);
   decorateIcons(main);
   buildAutoBlocks(main);
   decorateSections(main);
   decorateBlocks(main);
+}
+
+/**
+ * Decorates all links in scope of element
+ *
+ * @param {HTMLElement} main
+ */
+function decorateLinks(main) {
+  const root = getRootPath();
+  const roots = getListOfRootPaths();
+
+  main.querySelectorAll('a').forEach((a) => {
+    // If we are in the root, do nothing
+    if (roots.length === 0) return;
+
+    try {
+      const url = new URL(a.href);
+      const {
+        origin,
+        pathname,
+        search,
+        hash,
+      } = url;
+
+      // if the links belongs to another store, do nothing
+      if (roots.some((r) => r !== root && pathname.startsWith(r))) return;
+
+      // If the link is already localized, do nothing
+      if (origin !== window.location.origin || pathname.startsWith(root)) return;
+      a.href = new URL(`${origin}${root}${pathname.replace(/^\//, '')}${search}${hash}`);
+    } catch {
+      console.warn('Could not make localized link');
+    }
+  });
 }
 
 function preloadFile(href, as) {
@@ -205,14 +251,7 @@ async function loadEager(doc) {
   document.documentElement.lang = 'en';
   decorateTemplateAndTheme();
 
-  // Instrument experimentation plugin
-  if (getMetadata('experiment')
-    || Object.keys(getAllMetadata('campaign')).length
-    || Object.keys(getAllMetadata('audience')).length) {
-    // eslint-disable-next-line import/no-relative-packages
-    const { loadEager: runEager } = await import('../plugins/experimentation/src/index.js');
-    await runEager(document, { audiences: AUDIENCES, overrideMetadataFields: ['placeholders'] }, pluginContext);
-  }
+  await runExperimentation(doc, experimentationConfig);
 
   await initializeDropins();
 
@@ -247,7 +286,7 @@ async function loadEager(doc) {
 
     if (category && urlpath) {
       // eslint-disable-next-line import/no-unresolved, import/no-absolute-path
-      const { preloadCategory } = await import('/blocks/product-list-page-custom/product-list-page-custom.js');
+      const { preloadCategory } = await import('../blocks/product-list-page-custom/product-list-page-custom.js');
       preloadCategory({ id: category, urlPath: urlpath });
     }
   } else if (document.body.querySelector('main .commerce-cart')) {
@@ -287,11 +326,15 @@ async function loadEager(doc) {
     await applyTemplates(doc);
 
     // Load LCP blocks
-    await loadSection(main.querySelector('.section'), waitForFirstImage);
+    await loadSection(main.querySelector('.section'), (section) => {
+      if (document.body.classList.contains('quick-edit')) return Promise.resolve();
+      return waitForFirstImage(section);
+    });
     document.body.classList.add('appear');
   }
 
-  events.emit('eds/lcp', true);
+  // notify that the page is ready for eager loading
+  notifyUI('lcp');
 
   try {
     /* if desktop (proxy for fast connection) or fonts already loaded, load fonts.css */
@@ -331,17 +374,29 @@ async function loadLazy(doc) {
   }
 
   trackHistory();
-
-  // Implement experimentation preview pill
-  if ((getMetadata('experiment')
-    || Object.keys(getAllMetadata('campaign')).length
-    || Object.keys(getAllMetadata('audience')).length)) {
-    // eslint-disable-next-line import/no-relative-packages
-    const { loadLazy: runLazy } = await import('../plugins/experimentation/src/index.js');
-    await runLazy(document, { audiences: AUDIENCES }, pluginContext);
-  }
   loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
   loadFonts();
+
+  await showExperimentationRail(doc, experimentationConfig);
+
+  const loadQuickEdit = async (...args) => {
+    // eslint-disable-next-line import/no-cycle
+    const { default: initQuickEdit } = await import('../tools/quick-edit/quick-edit.js');
+    initQuickEdit(...args);
+  };
+
+  const addSidekickListeners = (sk) => {
+    sk.addEventListener('custom:quick-edit', loadQuickEdit);
+  };
+
+  const sk = document.querySelector('aem-sidekick');
+  if (sk) {
+    addSidekickListeners(sk);
+  } else {
+    document.addEventListener('sidekick-ready', () => {
+      addSidekickListeners(document.querySelector('aem-sidekick'));
+    }, { once: true });
+  }
 }
 
 /**
@@ -394,6 +449,19 @@ export async function fetchIndex(indexFile, pageSize = 500) {
 }
 
 /**
+ * Decorates links.
+ * @param {string} [link] url to be localized
+ * @returns {string} - The localized link
+ */
+export function rootLink(link) {
+  const root = getRootPath().replace(/\/$/, '');
+
+  // If the link is already localized, do nothing
+  if (link.startsWith(root)) return link;
+  return `${root}${link}`;
+}
+
+/**
  * Check if consent was given for a specific topic.
  * @param {*} topic Topic identifier
  * @returns {boolean} True if consent was given
@@ -404,7 +472,8 @@ export function getConsent(topic) {
   return true;
 }
 
-async function loadPage() {
+export async function loadPage() {
+  await initializeConfig();
   await loadEager(document);
   await loadLazy(document);
   loadDelayed();
@@ -412,8 +481,24 @@ async function loadPage() {
 
 loadPage();
 
-(async function loadDa() {
-  if (!new URL(window.location.href).searchParams.get('dapreview')) return;
+(function da() {
+  const { searchParams } = new URL(window.location.href);
+
+  const lp = searchParams.get('dapreview');
   // eslint-disable-next-line import/no-unresolved
-  import('https://da.live/scripts/dapreview.js').then(({ default: daPreview }) => daPreview(loadPage));
+  if (lp) import('https://da.live/scripts/dapreview.js').then((mod) => mod.default(loadPage));
+
+  const exp = searchParams.get('daexperiment');
+  // eslint-disable-next-line import/no-unresolved
+  if (exp) import('https://da.live/nx/public/plugins/exp/exp.js');
+
+  const hasQE = new URL(window.location.href).searchParams.has('quick-edit');
+  if (hasQE) import('../tools/quick-edit/quick-edit.js').then((mod) => mod.default());
+  
+// (async function loadDa() {
+//   if (!new URL(window.location.href).searchParams.get('dapreview')) return;
+//   console.info('Loading DAP Review script');
+//   // eslint-disable-next-line import/no-unresolved
+//   import('https://da.live/scripts/dapreview.js').then(({ default: daPreview }) => daPreview(loadPage));
+
 }());

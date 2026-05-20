@@ -8,13 +8,20 @@
         "label": "Title"
       },
       {
+        "component": "text",
+        "name": "description",
+        "label": "Description"
+      },
+      {
         "component": "reference",
-        "name": "image"
+        "name": "image",
+        "label": "Image"
       },
       {
         "component": "text",
         "name": "robots",
-        "label": "Robots"
+        "label": "Robots",
+        "description": "Index control via robots"
       }
     ]
   },
@@ -153,6 +160,10 @@
             "value": "article"
           },
           {
+            "name": "Blog",
+            "value": "blog"
+          },
+          {
             "name": "Columns",
             "value": "columns"
           }
@@ -176,6 +187,18 @@
         "value": "",
         "label": "Variation",
         "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "blog-list",
+    "fields": [
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "heading",
+        "label": "Heading",
+        "value": ""
       }
     ]
   },
@@ -218,14 +241,221 @@
     ]
   },
   {
-    "id": "form-embed",
+    "id": "commerce-account-header",
     "fields": [
       {
         "component": "text",
+        "name": "title",
+        "label": "Account Header",
+        "value": "My Account"
+      }
+    ]
+  },
+  {
+    "id": "commerce-addresses",
+    "fields": [
+      {
+        "component": "boolean",
+        "name": "minified-view",
+        "label": "Minified View",
+        "value": false
+      }
+    ]
+  },
+  {
+    "id": "commerce-cart",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "start-shopping-url",
+        "label": "Start Shopping URL",
+        "description": "Link to the start shopping page"
+      },
+      {
+        "component": "aem-content",
+        "name": "checkout-url",
+        "label": "Checkout URL",
+        "description": "Link to Checkout page"
+      },
+      {
+        "component": "boolean",
+        "name": "hide-heading",
+        "label": "Hide Heading",
+        "description": "Hide the heading of the cart"
+      },
+      {
+        "component": "boolean",
+        "name": "hide-attributes",
+        "label": "Hide Attributes",
+        "description": "Hide the attributes of the cart"
+      },
+      {
+        "component": "boolean",
+        "name": "enable-item-quantity-update",
+        "label": "Enable Item Quantity Update",
+        "description": "Enable the ability to update the quantity of items in the cart"
+      },
+      {
+        "component": "boolean",
+        "name": "enable-item-remove",
+        "label": "Enable Item Remove",
+        "description": "Enable the ability to remove items from the cart"
+      },
+      {
+        "component": "boolean",
+        "name": "enable-estimate-shipping",
+        "label": "Enable Estimate Shipping",
+        "description": "Enable the ability to estimate shipping costs"
+      },
+      {
+        "component": "number",
+        "name": "max-items",
+        "label": "Max Items",
+        "description": "Maximum number of items to display in the cart"
+      }
+    ]
+  },
+  {
+    "id": "commerce-mini-cart",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "start-shopping-url",
+        "label": "Start Shopping URL",
+        "description": "Link to the start shopping page"
+      },
+      {
+        "component": "aem-content",
+        "name": "cart-url",
+        "label": "Cart URL",
+        "description": "Link to full shopping Cart"
+      },
+      {
+        "component": "aem-content",
+        "name": "checkout-url",
+        "label": "Checkout URL",
+        "description": "Link to Checkout page"
+      }
+    ]
+  },
+  {
+    "id": "commerce-orders-list",
+    "fields": [
+      {
+        "component": "boolean",
+        "name": "minified-view",
+        "label": "Minified View",
+        "value": false
+      }
+    ]
+  },
+  {
+    "id": "commerce-returns-list",
+    "fields": [
+      {
+        "component": "boolean",
+        "name": "minified-view",
+        "label": "Minified View",
+        "value": false
+      }
+    ]
+  },
+  {
+    "id": "dm-video",
+    "fields": [
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "thumbnail",
+        "label": "Thumbnail / poster image",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "videoUrl",
+        "label": "DM video URL (/play player or direct .mp4)",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "dm-scene7-template",
+    "fields": [
+      {
+        "component": "text",
+        "name": "image",
+        "label": "Scene7 template URL",
+        "description": "Paste the full Dynamic Media image template URL (…/is/image/…?…). ",
+        "valueType": "string",
+        "value": ""
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "imageAlt",
+        "label": "Alt",
+        "value": ""
+      }
+    ]
+  },
+  {
+    "id": "embed-adaptive-form",
+    "fields": [
+      {
+        "component": "aem-content",
         "valueType": "string",
         "name": "formPath",
         "value": "",
-        "label": "Form Path"
+        "label": "Form Path",
+        "validation": {
+          "rootPath": "/content/forms/af"
+        }
+      }
+    ]
+  },
+  {
+    "id": "enrichment",
+    "fields": [
+      {
+        "component": "select",
+        "name": "type",
+        "label": "Type",
+        "description": "What enrichment type to match with",
+        "options": [
+          {
+            "name": "Product",
+            "value": "product"
+          },
+          {
+            "name": "Category",
+            "value": "category"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "position",
+        "label": "Position",
+        "description": "Position to match with",
+        "options": [
+          {
+            "name": "Below Product",
+            "value": "below-product"
+          },
+          {
+            "name": "Above Product",
+            "value": "above-product"
+          },
+          {
+            "name": "Below Category",
+            "value": "below-category"
+          },
+          {
+            "name": "Above Category",
+            "value": "above-category"
+          }
+        ]
       }
     ]
   },
@@ -4813,6 +5043,19 @@
     ]
   },
   {
+    "id": "insights",
+    "fields": [
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "note",
+        "label": "Author note",
+        "value": "",
+        "description": "Optional note in the document for authors. Usage charts and the insights list are populated from CRM data on the dashboard; you can leave this empty."
+      }
+    ]
+  },
+  {
     "id": "offer",
     "fields": [
       {
@@ -4820,14 +5063,11 @@
         "name": "offerpath",
         "value": "",
         "label": "Offer Content Fragment path",
-        "valueType": "string"
-      },
-      {
-        "component": "text-input",
-        "name": "variation",
-        "value": "",
-        "label": "Variation",
-        "valueType": "string"
+        "valueType": "string",
+        "variationName": "contentFragmentVariation",
+        "validation": {
+          "rootPath": "/content/dam/frescopa/en"
+        }
       }
     ]
   },
@@ -4918,6 +5158,18 @@
         "component": "sku",
         "name": "sku",
         "label": "Product SKU",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
+    "id": "quiz",
+    "fields": [
+      {
+        "component": "aem-content-fragment",
+        "name": "quizpath",
+        "value": "",
+        "label": "Quiz Content Fragment path",
         "valueType": "string"
       }
     ]
@@ -5361,6 +5613,43 @@
     ]
   },
   {
+    "id": "sticky-cta",
+    "fields": [
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "fileReference",
+        "label": "Image",
+        "description": "The image, min Xpx x Ypx...",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "fileReferenceAlt",
+        "value": "",
+        "label": "Image Description",
+        "description": "A descriptive text of the image will be shown as tooltip."
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "cta1Text",
+        "value": "",
+        "label": "CTA Text",
+        "description": "Text to be shown inside button."
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "cta1",
+        "value": "",
+        "label": "CTA Link",
+        "description": "What link to open when clicking the button."
+      }
+    ]
+  },
+  {
     "id": "storelocator",
     "fields": [
       {
@@ -5375,6 +5664,27 @@
         "name": "headline",
         "value": "",
         "label": "Headline",
+        "valueType": "string"
+      },
+      {
+        "component": "text-input",
+        "name": "subhead",
+        "value": "",
+        "label": "Subhead",
+        "valueType": "string"
+      },
+      {
+        "component": "text-input",
+        "name": "search-placeholder",
+        "value": "",
+        "label": "Search Placeholder",
+        "valueType": "string"
+      },
+      {
+        "component": "text-input",
+        "name": "cta",
+        "value": "",
+        "label": "Search Button Text",
         "valueType": "string"
       }
     ]
